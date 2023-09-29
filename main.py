@@ -6,10 +6,11 @@ import os
 from PIL import Image
 import time
 from multiprocessing import Process
+import sys
+
 
 IMAGES_PATH = "./slides"
 NUM_OF_PROCESSES = int(os.cpu_count())
-LINK = "https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-72514916"
 
 
 # get website data
@@ -23,7 +24,7 @@ def get_website_data(slideshow_link: str) -> list[str]:
 
     for picture in sources:
         links.append(picture.get("srcset").split(", ")[-1])
-        
+
     return links
 
 
@@ -75,10 +76,10 @@ def generate_and_run_processes(links: list[str]) -> None:
 
 
 # append them into a single file
-def generate_pdf_from_images() -> None:
+def generate_pdf_from_images(url: str) -> None:
     images = [Image.open(f"{IMAGES_PATH}/" + img) for img in os.listdir(IMAGES_PATH)]
 
-    pdf_path = f"./{LINK.split('/')[-1].capitalize()}.pdf"
+    pdf_path = f"./{url.split('/')[-1].capitalize()}.pdf"
 
     images[0].save(
         pdf_path, "PDF", resolution=100.0, save_all=True, append_images=images[1:]
@@ -87,10 +88,11 @@ def generate_pdf_from_images() -> None:
 
 if __name__ == "__main__":
     st = time.perf_counter()
+    url = sys.argv[1]
 
-    links = get_website_data(LINK)
+    links = get_website_data(url)
     generate_temp_folder()
     generate_and_run_processes(links)
-    generate_pdf_from_images()
+    generate_pdf_from_images(url)
 
     print((time.perf_counter() - st))
