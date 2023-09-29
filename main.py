@@ -14,7 +14,7 @@ LINK = "https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-725
 
 # get website data
 def get_website_data(slideshow_link: str) -> list[str]:
-    
+
     r = requests.get(slideshow_link)
     soup = BeautifulSoup(r.content, "html.parser")
     sources = soup.find_all("source")
@@ -23,7 +23,7 @@ def get_website_data(slideshow_link: str) -> list[str]:
 
     for picture in sources:
         links.append(picture.get("srcset").split(", ")[-1])
-    
+        
     return links
 
 
@@ -31,12 +31,14 @@ def get_website_data(slideshow_link: str) -> list[str]:
 def generate_temp_folder() -> None:
     if not os.path.isdir(IMAGES_PATH):
         os.mkdir(IMAGES_PATH)
-    
+
 
 # download images - spawn multiple processes
 def download_image(links: list[str], slide_number_start: int) -> None:
     for itr, link in enumerate(links):
-        urllib.request.urlretrieve(link.split(" ")[0], f"{IMAGES_PATH}/{itr + slide_number_start}.jpg")
+        urllib.request.urlretrieve(
+            link.split(" ")[0], f"{IMAGES_PATH}/{itr + slide_number_start}.jpg"
+        )
 
 
 def generate_and_run_processes(links: list[str]) -> None:
@@ -49,8 +51,7 @@ def generate_and_run_processes(links: list[str]) -> None:
                 Process(
                     target=download_image,
                     args=(
-                        links[links_per_process *
-                              (i - 1): links_per_process * i],
+                        links[links_per_process * (i - 1) : links_per_process * i],
                         links_per_process * (i - 1),
                     ),
                 )
@@ -60,7 +61,7 @@ def generate_and_run_processes(links: list[str]) -> None:
                 Process(
                     target=download_image,
                     args=(
-                        links[links_per_process * (i - 1):],
+                        links[links_per_process * (i - 1) :],
                         links_per_process * (i - 1),
                     ),
                 )
@@ -72,10 +73,10 @@ def generate_and_run_processes(links: list[str]) -> None:
     for process in processes:
         process.join()
 
+
 # append them into a single file
 def generate_pdf_from_images() -> None:
-    images = [Image.open(f"{IMAGES_PATH}/" + img)
-              for img in os.listdir(IMAGES_PATH)]
+    images = [Image.open(f"{IMAGES_PATH}/" + img) for img in os.listdir(IMAGES_PATH)]
 
     pdf_path = f"./{LINK.split('/')[-1].capitalize()}.pdf"
 
@@ -91,7 +92,5 @@ if __name__ == "__main__":
     generate_temp_folder()
     generate_and_run_processes(links)
     generate_pdf_from_images()
-    
-    
 
     print((time.perf_counter() - st))
