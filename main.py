@@ -1,73 +1,71 @@
 import math
 import requests
-from bs4 import BeautifulSoup
-import urllib.request
-import os
-from PIL import Image
-import time
-from multiprocessing import Process
 import sys
+import os
+import time
+import shutil
+import urllib.request
+from bs4 import BeautifulSoup
+from PIL import Image
+from multiprocessing import Process
 
 
-IMAGES_PATH = "./slides"
-NUM_OF_PROCESSES = int(os.cpu_count())
+TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PPT"
+NUM_OF_PROCESSES = os.cpu_count() or 4
 
 
-# get website data
-def get_website_data(slideshow_link: str) -> list[str]:
-
-    r = requests.get(slideshow_link)
-    soup = BeautifulSoup(r.content, "html.parser")
+def get_image_links_from_url(url: str) -> list[str]:
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
     sources = soup.find_all("source")
 
-    links = []
+    image_links = [image.get("srcset").split(", ")[-1] for image in sources]
 
-    for picture in sources:
-        links.append(picture.get("srcset").split(", ")[-1])
-
-    return links
+    return image_links
 
 
-# check if temporary folder exists
-def generate_temp_folder() -> None:
-    if not os.path.isdir(IMAGES_PATH):
-        os.mkdir(IMAGES_PATH)
+def create_temp_folder() -> None:
+    if not os.path.isdir(TEMP_IMAGES_PATH):
+        os.mkdir(TEMP_IMAGES_PATH)
+    else:
+        delete_temp_files()
+        create_temp_folder()
 
 
-# download images - spawn multiple processes
-def download_image(links: list[str], slide_number_start: int) -> None:
+def get_images(links: list[str], image_start_idx: int) -> None:
     for itr, link in enumerate(links):
         urllib.request.urlretrieve(
-            link.split(" ")[0], f"{IMAGES_PATH}/{itr + slide_number_start}.jpg"
+            link.split(" ")[0], f"{TEMP_IMAGES_PATH}/{itr + image_start_idx}.jpg"
         )
 
 
-def generate_and_run_processes(links: list[str]) -> None:
+def create_processes(links: list[str]) -> None:
     links_per_process = math.ceil(len(links) / NUM_OF_PROCESSES)
     processes = []
 
     for i in range(1, NUM_OF_PROCESSES + 1):
-        if i != 8:
-            processes.append(
-                Process(
-                    target=download_image,
-                    args=(
-                        links[links_per_process * (i - 1) : links_per_process * i],
-                        links_per_process * (i - 1),
-                    ),
-                )
-            )
+        if i != NUM_OF_PROCESSES:
+            process_args = [
+                links[links_per_process * (i - 1) : links_per_process * i],
+                links_per_process * (i - 1),
+            ]
         else:
-            processes.append(
-                Process(
-                    target=download_image,
-                    args=(
-                        links[links_per_process * (i - 1) :],
-                        links_per_process * (i - 1),
-                    ),
-                )
-            )
+            process_args = [
+                links[links_per_process * (i - 1) :],
+                links_per_process * (i - 1),
+            ]
 
+        processes.append(
+            Process(
+                target=get_images,
+                args=process_args,
+            )
+        )
+
+    run_processes(processes)
+
+
+def run_processes(processes: list[Process]) -> None:
     for process in processes:
         process.start()
 
@@ -77,22 +75,34 @@ def generate_and_run_processes(links: list[str]) -> None:
 
 # append them into a single file
 def generate_pdf_from_images(url: str) -> None:
-    images = [Image.open(f"{IMAGES_PATH}/" + img) for img in os.listdir(IMAGES_PATH)]
-
     pdf_path = f"./{url.split('/')[-1].capitalize()}.pdf"
+
+    images = [
+        Image.open(f"{TEMP_IMAGES_PATH}/" + img) for img in os.listdir(TEMP_IMAGES_PATH)
+    ]
 
     images[0].save(
         pdf_path, "PDF", resolution=100.0, save_all=True, append_images=images[1:]
     )
 
+    delete_temp_files()
+
+
+def delete_temp_files():
+    if os.path.isdir(TEMP_IMAGES_PATH):
+        shutil.rmtree(TEMP_IMAGES_PATH)
+
 
 if __name__ == "__main__":
-    st = time.perf_counter()
     url = sys.argv[1]
 
-    links = get_website_data(url)
-    generate_temp_folder()
-    generate_and_run_processes(links)
+    st = time.perf_counter()
+
+    image_links = get_image_links_from_url(url)
+    create_temp_folder()
+    create_processes(image_links)
+    st1 = time.perf_counter()
     generate_pdf_from_images(url)
+    print("Printing time: ", time.perf_counter() - st1)
 
     print((time.perf_counter() - st))
