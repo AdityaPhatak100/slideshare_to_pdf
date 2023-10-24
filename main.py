@@ -94,6 +94,24 @@ def delete_temp_files():
 
 
 if __name__ == "__main__":
+    
+    
+    """
+    SAMPLE LINKS FOR TESTING:
+    
+    https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-72514916
+    https://www.slideshare.net/HubSpot/git-101-git-and-github-for-beginners
+    https://www.slideshare.net/Simplilearn/git-tutorial-for-beginners-what-is-git-and-github-devops-tools-devops-tutorial-simplilearn
+    https://www.slideshare.net/provat34/git-in-10-minutes-42712502
+    https://www.slideshare.net/GHARSALLAHMouhamed/git-basics-60662778
+    https://www.slideshare.net/SkanderHamza/git-training-v10-233478299
+    https://www.slideshare.net/GameCraftBulgaria/github-basics
+    https://www.slideshare.net/nilaybinjola/git-basic-crash-course
+    https://www.slideshare.net/hanxue/github-git-training-slides-foundations
+    https://www.slideshare.net/glen_a_smith/git-one-day-training-notes
+    
+    """
+    
     url = sys.argv[1]
 
     st = time.perf_counter()
