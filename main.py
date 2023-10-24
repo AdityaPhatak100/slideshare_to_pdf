@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import shutil
+import argparse
 import urllib.request
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -16,6 +17,7 @@ NUM_OF_PROCESSES = os.cpu_count() or 4
 
 def get_image_links_from_url(url: str) -> list[str]:
     response = requests.get(url)
+
     soup = BeautifulSoup(response.content, "html.parser")
     sources = soup.find_all("source")
 
@@ -94,33 +96,50 @@ def delete_temp_files():
 
 
 if __name__ == "__main__":
-    
-    
-    """
-    SAMPLE LINKS FOR TESTING:
-    
-    https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-72514916
-    https://www.slideshare.net/HubSpot/git-101-git-and-github-for-beginners
-    https://www.slideshare.net/Simplilearn/git-tutorial-for-beginners-what-is-git-and-github-devops-tools-devops-tutorial-simplilearn
-    https://www.slideshare.net/provat34/git-in-10-minutes-42712502
-    https://www.slideshare.net/GHARSALLAHMouhamed/git-basics-60662778
-    https://www.slideshare.net/SkanderHamza/git-training-v10-233478299
-    https://www.slideshare.net/GameCraftBulgaria/github-basics
-    https://www.slideshare.net/nilaybinjola/git-basic-crash-course
-    https://www.slideshare.net/hanxue/github-git-training-slides-foundations
-    https://www.slideshare.net/glen_a_smith/git-one-day-training-notes
-    
-    """
-    
-    url = sys.argv[1]
+    parser = argparse.ArgumentParser(
+        prog="Slideshare to PPT",
+        usage="Converts slideshare links into PPTs. It can accept single file, as well as a .txt file containing multiple slideshare.net links, as an input.",
+    )
 
-    st = time.perf_counter()
+    parser.add_argument(
+        "-m", help="Specify a text file path containing multiple slideshare links."
+    )
+    parser.add_argument("-l", help="Specify a single slideshare link.")
 
-    image_links = get_image_links_from_url(url)
-    create_temp_folder()
-    create_processes(image_links)
-    st1 = time.perf_counter()
-    generate_pdf_from_images(url)
-    print("Printing time: ", time.perf_counter() - st1)
+    args = parser.parse_args()
 
-    print((time.perf_counter() - st))
+    if args.l and args.m:
+        print(
+            "Use either a link (-l) or a text file (-m). Cannot use both at the same time."
+        )
+        exit(0)
+
+    if not args.l and not args.m:
+        print(
+            """Mention a slideshare url or a text file with multiple slideshare urls
+
+For example,
+>>> python main.py -l "SLIDESHARE URL" 
+                OR
+>>> python main.py -m "TEXT FILE PATH"
+              """
+        )
+        
+
+    if args.l:
+        url = args.l
+
+        image_links = get_image_links_from_url(url)
+        create_temp_folder()
+        create_processes(image_links)
+        # st1 = time.perf_counter()
+        generate_pdf_from_images(url)
+
+    if args.m:
+        with open(args.m, "r") as file:
+            for url in file.readlines():
+                url = url.strip()
+                image_links = get_image_links_from_url(url)
+                create_temp_folder()
+                create_processes(image_links)
+                generate_pdf_from_images(url)
