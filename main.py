@@ -2,7 +2,7 @@ import os
 import argparse
 from slidesharetopdf import SlideShareToPDF
 
-TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PPT"
+TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PDF"
 NUM_OF_PROCESSES = os.cpu_count() or 4
 
 
