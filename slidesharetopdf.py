@@ -21,7 +21,7 @@ class SlideShareToPDF:
         sources = soup.find_all("source")
 
         image_links = [image.get("srcset").split(", ")[-1] for image in sources]
-                
+
         return image_links
 
     def create_temp_folder(self) -> None:
@@ -93,17 +93,18 @@ class SlideShareToPDF:
 
     def download_pdf(self, url: str) -> None:
         url = url.strip()
+        print("URL:", url)
         st = time.perf_counter()
         image_links = self.get_image_links_from_url(url)
-        print("Total number of slides: ", len(image_links))
+        print("Total number of slides:", len(image_links))
         self.create_temp_folder()
         print("Downloading slides...")
         self.create_threads(image_links)
         print("Generating PDF...")
         self.generate_pdf_from_images(url)
-        print(f"Time taken: {round(time.perf_counter() - st, 3)}s\n",)
-
-        
+        print(
+            f"Time taken: {round(time.perf_counter() - st, 3)}s\n",
+        )
 
 
 if __name__ == "__main__":
