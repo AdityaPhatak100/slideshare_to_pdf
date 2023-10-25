@@ -1,6 +1,7 @@
 import os
 import math
 import shutil
+import time
 import urllib
 import requests
 from PIL import Image
@@ -92,8 +93,23 @@ class SlideShareToPDF:
 
     def download_pdf(self, url: str) -> None:
         url = url.strip()
-        
+
         image_links = self.get_image_links_from_url(url)
         self.create_temp_folder()
         self.create_processes(image_links)
         self.generate_pdf_from_images(url)
+
+
+if __name__ == "__main__":
+    TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PPT"
+    NUM_OF_PROCESSES = os.cpu_count() or 4
+
+    TEST_LINK = (
+        "https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-72514916"
+    )
+
+    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_PROCESSES)
+
+    st = time.perf_counter()
+    obj.download_pdf(TEST_LINK)
+    print(round(time.perf_counter() - st, 3))
