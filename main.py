@@ -1,9 +1,10 @@
 import os
 import argparse
+import time
 from slidesharetopdf import SlideShareToPDF
 
 TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PPT"
-NUM_OF_PROCESSES = os.cpu_count() or 4
+NUM_OF_THREADS = (os.cpu_count() or 4) * 4
 
 
 if __name__ == "__main__":
@@ -35,7 +36,7 @@ if __name__ == "__main__":
               """
         )
 
-    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_PROCESSES)
+    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_THREADS)
     
     if args.l:
         url = args.l
@@ -44,4 +45,5 @@ if __name__ == "__main__":
     if args.m:
         with open(args.m, "r") as file:
             for url in file.readlines():
+                print("URL: ", url)
                 obj.download_pdf(url)
