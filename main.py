@@ -1,9 +1,10 @@
 import os
 import argparse
+import time
 from slidesharetopdf import SlideShareToPDF
 
 TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PDF"
-NUM_OF_PROCESSES = os.cpu_count() or 4
+NUM_OF_THREADS = (os.cpu_count() or 4) * 4
 
 
 if __name__ == "__main__":
@@ -27,21 +28,30 @@ if __name__ == "__main__":
 
     if not args.l and not args.m:
         print(
-            """Mention a slideshare url or a text file with multiple slideshare urls
-                For example,
+            """
+            Mention a slideshare url or a text file with multiple slideshare urls
+            For example,
                 >>> python main.py -l "SLIDESHARE URL" 
                                 OR
                 >>> python main.py -m "TEXT FILE PATH"
               """
         )
 
-    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_PROCESSES)
-    
+    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_THREADS)
+
     if args.l:
         url = args.l
         obj.download_pdf(url)
 
+    pdfs_count = 0
+
     if args.m:
         with open(args.m, "r") as file:
+            total_time = time.perf_counter()
+
             for url in file.readlines():
+                pdfs_count += 1
                 obj.download_pdf(url)
+
+            print("Total number of PDFs printed:", pdfs_count)
+            print("Total time taken:", round(time.perf_counter() - total_time, 3))
