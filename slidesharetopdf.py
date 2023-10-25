@@ -6,13 +6,13 @@ import urllib
 import requests
 from PIL import Image
 from bs4 import BeautifulSoup
-from multiprocessing import Process
+from threading import Thread
 
 
 class SlideShareToPDF:
-    def __init__(self, temp_images_path, num_of_processes) -> None:
+    def __init__(self, temp_images_path, num_of_threads) -> None:
         self.TEMP_IMAGES_PATH = temp_images_path
-        self.NUM_OF_PROCESSES = num_of_processes
+        self.NUM_OF_THREADS = num_of_threads
 
     def get_image_links_from_url(self, url: str) -> list[str]:
         response = requests.get(url)
@@ -45,37 +45,37 @@ class SlideShareToPDF:
             except urllib.error.HTTPError:
                 print("An Image was not found")
 
-    def create_processes(self, links: list[str]) -> None:
-        links_per_process = math.ceil(len(links) / self.NUM_OF_PROCESSES)
-        processes = []
+    def create_threads(self, links: list[str]) -> None:
+        links_per_thread = math.ceil(len(links) / self.NUM_OF_THREADS)
+        threads = []
 
-        for i in range(1, self.NUM_OF_PROCESSES + 1):
-            if i != self.NUM_OF_PROCESSES:
-                process_args = [
-                    links[links_per_process * (i - 1) : links_per_process * i],
-                    links_per_process * (i - 1),
+        for i in range(1, self.NUM_OF_THREADS + 1):
+            if i != self.NUM_OF_THREADS:
+                thread_args = [
+                    links[links_per_thread * (i - 1) : links_per_thread * i],
+                    links_per_thread * (i - 1),
                 ]
             else:
-                process_args = [
-                    links[links_per_process * (i - 1) :],
-                    links_per_process * (i - 1),
+                thread_args = [
+                    links[links_per_thread * (i - 1) :],
+                    links_per_thread * (i - 1),
                 ]
 
-            processes.append(
-                Process(
+            threads.append(
+                Thread(
                     target=self.get_images,
-                    args=process_args,
+                    args=thread_args,
                 )
             )
 
-        self.run_processes(processes)
+        self.run_threads(threads)
 
-    def run_processes(self, processes: list[Process]) -> None:
-        for process in processes:
-            process.start()
+    def run_threads(self, threads: list[Thread]) -> None:
+        for thread in threads:
+            thread.start()
 
-        for process in processes:
-            process.join()
+        for thread in threads:
+            thread.join()
 
     def generate_pdf_from_images(self, url: str) -> None:
         pdf_path = f"./{url.split('/')[-1].capitalize()}.pdf"
@@ -96,19 +96,19 @@ class SlideShareToPDF:
 
         image_links = self.get_image_links_from_url(url)
         self.create_temp_folder()
-        self.create_processes(image_links)
+        self.create_threads(image_links)
         self.generate_pdf_from_images(url)
 
 
 if __name__ == "__main__":
     TEMP_IMAGES_PATH = "./TEMP_IMAGES_FOR_PPT"
-    NUM_OF_PROCESSES = os.cpu_count() or 4
+    NUM_OF_THREADS = (os.cpu_count() or 4) * 8
 
     TEST_LINK = (
         "https://www.slideshare.net/bcbbslides/introduction-to-git-and-github-72514916"
     )
 
-    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_PROCESSES)
+    obj = SlideShareToPDF(TEMP_IMAGES_PATH, NUM_OF_THREADS)
 
     st = time.perf_counter()
     obj.download_pdf(TEST_LINK)
