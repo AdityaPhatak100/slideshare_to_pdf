@@ -1,4 +1,5 @@
 import os
+import re
 import math
 import shutil
 import time
@@ -18,8 +19,7 @@ class SlideShareToPDF:
         response = requests.get(url)
 
         soup = BeautifulSoup(response.content, "html.parser")
-        sources = soup.find_all("source")
-
+        sources = soup.find_all("img", {"id": re.compile("^slide-image-[0-9]*")})
         image_links = [image.get("srcset").split(", ")[-1] for image in sources]
 
         return image_links
